@@ -131,6 +131,7 @@
             width: 100%;
             border-collapse: collapse;
             min-width: 600px;
+            background: white;
         }
         th, td {
             text-align: left;
@@ -400,11 +401,13 @@
                 local.dif = local.gf - local.gc; visit.dif = visit.gf - visit.gc;
             }
         });
+        // Añadir equipos sin partidos (todos los datos en cero)
         return Array.from(table.values()).sort((a,b)=> b.pts - a.pts || b.dif - a.dif);
     }
 
     function renderUserMode() {
         let standings = getStandings();
+        // Construir tabla con HTML correcto
         let htmlStand = `<table class="standings-table">
             <thead>
                 <tr><th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr>
@@ -413,11 +416,19 @@
         standings.forEach((t, idx) => {
             let rowClass = (idx < 4) ? 'row-qualified' : 'row-eliminated';
             htmlStand += `<tr class="${rowClass}">
-                <td>${idx+1}</td><td>${t.nombre}</td><td>${t.pj}</td><td>${t.pg}</td><td>${t.pe}</td><td>${t.pp}</td>
-                <td>${t.gf}</td><td>${t.gc}</td><td>${t.dif}</td><td>${t.pts}</td>
-            </table>`;
+                <td>${idx+1}</td>
+                <td>${t.nombre}</td>
+                <td>${t.pj}</td>
+                <td>${t.pg}</td>
+                <td>${t.pe}</td>
+                <td>${t.pp}</td>
+                <td>${t.gf}</td>
+                <td>${t.gc}</td>
+                <td>${t.dif}</td>
+                <td>${t.pts}</td>
+            </tr>`;
         });
-        htmlStand += `</tbody></td>`;
+        htmlStand += `</tbody></table>`;
         document.getElementById("standingsTable").innerHTML = htmlStand;
         
         let statsMap = computePlayerStats();
