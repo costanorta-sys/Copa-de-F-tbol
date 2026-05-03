@@ -8,17 +8,36 @@
     {
       "id": "eq1",
       "nombre": "Magdalena F.C",
-      "jugadores": []
+      "jugadores": [
+        {
+          "id": "1777817770645-0.dxdscmvgboc",
+          "nombre": "Roberto Ramírez"
+        },
+        {
+          "id": "1777817803046-0.ltk5rmkaav7",
+          "nombre": "Laidel Alfonso"
+        }
+      ]
     },
     {
       "id": "eq2",
       "nombre": "San Diego F.C",
-      "jugadores": []
+      "jugadores": [
+        {
+          "id": "1777817823334-0.s0sktyg08ft",
+          "nombre": "Randy Gutiérrez"
+        }
+      ]
     },
     {
       "id": "eq3",
       "nombre": "Sitiecito F.C",
-      "jugadores": []
+      "jugadores": [
+        {
+          "id": "1777817746755-0.jynyjrqavqj",
+          "nombre": "Juan Carlos Vaca"
+        }
+      ]
     },
     {
       "id": "eq4",
@@ -33,7 +52,20 @@
     {
       "id": "1777806757664-0.f451rylph35",
       "nombre": "Avenida FC",
-      "jugadores": []
+      "jugadores": [
+        {
+          "id": "1777817860062-0.qvsn8copuym",
+          "nombre": "Marlon Pedraza Acosta"
+        },
+        {
+          "id": "1777817914086-0.bih3a5l4xhe",
+          "nombre": "Leandro González"
+        },
+        {
+          "id": "1777817937646-0.c4wol22xnhs",
+          "nombre": "Bryan Mora"
+        }
+      ]
     },
     {
       "id": "1777814351221-0.gdpthku55k7",
@@ -48,13 +80,30 @@
       "equipoLocalId": "1777806757664-0.f451rylph35",
       "equipoVisitanteId": "1777806720668-0.nfsbamm6fps",
       "fechaHora": "2026-05-03T08:00",
-      "estado": "programado",
+      "estado": "finalizado",
       "eventos": {
-        "goles": [],
-        "tarjetas": [],
+        "goles": [
+          {
+            "jugadorId": "1777817914086-0.bih3a5l4xhe",
+            "equipoLocal": true
+          },
+          {
+            "jugadorId": "1777817937646-0.c4wol22xnhs",
+            "equipoLocal": true
+          }
+        ],
+        "tarjetas": [
+          {
+            "jugadorId": "1777817860062-0.qvsn8copuym",
+            "tipo": "roja"
+          }
+        ],
         "mvp": null
       },
-      "resultado": null
+      "resultado": {
+        "golesLocal": 2,
+        "golesVisitante": 0
+      }
     },
     {
       "id": "1777806931032-0.iheao9nd6b",
@@ -62,13 +111,21 @@
       "equipoLocalId": "eq2",
       "equipoVisitanteId": "eq4",
       "fechaHora": "2026-05-03T09:00",
-      "estado": "programado",
+      "estado": "finalizado",
       "eventos": {
         "goles": [],
-        "tarjetas": [],
+        "tarjetas": [
+          {
+            "jugadorId": "1777817823334-0.s0sktyg08ft",
+            "tipo": "roja"
+          }
+        ],
         "mvp": null
       },
-      "resultado": null
+      "resultado": {
+        "golesLocal": 0,
+        "golesVisitante": 0
+      }
     },
     {
       "id": "1777806961647-0.tj6gkx279jh",
@@ -76,13 +133,29 @@
       "equipoLocalId": "eq3",
       "equipoVisitanteId": "eq1",
       "fechaHora": "2026-05-03T10:00",
-      "estado": "programado",
+      "estado": "finalizado",
       "eventos": {
         "goles": [],
-        "tarjetas": [],
+        "tarjetas": [
+          {
+            "jugadorId": "1777817746755-0.jynyjrqavqj",
+            "tipo": "amarilla"
+          },
+          {
+            "jugadorId": "1777817770645-0.dxdscmvgboc",
+            "tipo": "amarilla"
+          },
+          {
+            "jugadorId": "1777817803046-0.ltk5rmkaav7",
+            "tipo": "amarilla"
+          }
+        ],
         "mvp": null
       },
-      "resultado": null
+      "resultado": {
+        "golesLocal": 0,
+        "golesVisitante": 0
+      }
     }
   ]
 }
