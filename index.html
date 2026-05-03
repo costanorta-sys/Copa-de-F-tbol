@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Fútbol7 - Gestión de Torneo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            overflow: hidden;
+            padding: 20px 24px;
+        }
+        .mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        .tournament-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #1e3c72, #2b4e8c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .mode-badge {
+            background: #e9ecef;
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .admin-btn {
+            background: #0f172a;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .admin-btn.active {
+            background: #dc2626;
+        }
+        .admin-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 12px;
+        }
+        .tab-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active-tab {
+            background: #1e293b;
+            color: white;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #eef2f6;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 5px solid #3b82f6;
+            padding-left: 12px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        input, select, button, textarea {
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.9rem;
+        }
+        button {
+            background: #1e293b;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            border: none;
+        }
+        button:hover {
+            background: #0f172a;
+        }
+        /* CORRECCIÓN DE TABLA: quitamos display:block y añadimos scroll horizontal */
+        .responsive-table {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* para forzar scroll en móvil si es necesario */
+        }
+        th, td {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+        th {
+            background-color: #f8fafc;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .stats-badge {
+            background: #fef9c3;
+            border-radius: 24px;
+            padding: 2px 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .countdown {
+            font-family: monospace;
+            font-weight: bold;
+            background: #eef2ff;
+            border-radius: 50px;
+            padding: 4px 12px;
+            display: inline-block;
+        }
+        .team-player-list {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 16px; }
+            .card-title { font-size: 1.1rem; }
+            th, td { padding: 8px 4px; font-size: 0.75rem; }
+        }
+        .edit-jornada-btn, .edit-full-btn, .delete-match-btn {
+            margin-left: 8px;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+        }
+        .edit-jornada-btn { background: #f59e0b; }
+        .edit-jornada-btn:hover { background: #d97706; }
+        .edit-full-btn { background: #3b82f6; }
+        .delete-match-btn { background: #ef4444; }
+        .delete-match-btn:hover { background: #dc2626; }
+        .import-json-btn { background: #10b981; margin-left: 12px; }
+        .import-json-btn:hover { background: #059669; }
+    </style>
+</head>
+<body>
+<div class="container" id="appRoot">
+    <div class="mode-header">
+        <div class="tournament-title" id="tournamentNameDisplay">⚽ TORNEO FUTBOL7</div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <span class="mode-badge" id="modeLabel">👤 MODO USUARIO</span>
+            <button id="toggleModeBtn" class="admin-btn">🔐 Acceso Admin</button>
+        </div>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <div class="admin-tabs">
+            <button class="tab-btn active-tab" data-tab="config">🏆 Configuración</button>
+            <button class="tab-btn" data-tab="teams">⚽ Equipos & Jugadores</button>
+            <button class="tab-btn" data-tab="matches">📅 Partidos / Estadísticas</button>
+            <button class="tab-btn" data-tab="export">📤 Exportar / Importar Datos</button>
+        </div>
+        <div id="tabConfig" class="tab-content card">
+            <div class="card-title">⚙️ Configuración del Torneo</div>
+            <div class="form-grid">
+                <input type="text" id="torneoNombre" placeholder="Nombre Torneo">
+                <input type="number" id="numEquipos" placeholder="Cantidad Equipos" min="2" max="20">
+                <input type="number" id="numJornadas" placeholder="Nº Jornadas" min="1">
+                <button id="saveConfigBtn">Guardar Configuración</button>
+            </div>
+            <div class="info-text small text-gray">⚠️ Cambiar número de equipos reinicia estructura (equipos/partidos).</div>
+        </div>
+        <div id="tabTeams" class="tab-content card" style="display:none;">
+            <div class="card-title">📋 Equipos & Plantillas</div>
+            <div class="flex-between">
+                <button id="addTeamBtn">➕ Agregar Equipo</button>
+                <div><button id="importTeamsCsvBtn">📂 Importar CSV (Equipos/Jugadores)</button>
+                <button id="exportTeamsCsvBtn">📎 Exportar CSV</button></div>
+            </div>
+            <div id="teamsListContainer" style="margin-top: 20px;"></div>
+        </div>
+        <div id="tabMatches" class="tab-content card" style="display:none;">
+            <div class="card-title">🗓️ Gestión de Partidos y Estadísticas</div>
+            <div class="form-grid">
+                <select id="matchJornadaSelect"></select>
+                <select id="matchLocalTeam"></select>
+                <select id="matchAwayTeam"></select>
+                <input type="datetime-local" id="matchDateTime">
+                <button id="createMatchBtn">➕ Crear Partido</button>
+            </div>
+            <hr style="margin: 20px 0;">
+            <h4>📋 Partidos por Jornada</h4>
+            <select id="filterJornadaPartidos"></select>
+            <div id="matchesListAdmin" style="margin-top: 15px;"></div>
+        </div>
+        <div id="tabExport" class="tab-content card" style="display:none;">
+            <div class="card-title">💾 Exportar / Importar datos globales</div>
+            <p>Descarga el archivo <strong>datos.json</strong> actualizado y súbelo manualmente a tu repositorio (misma carpeta raíz). También puedes importar un JSON completo para restaurar el torneo.</p>
+            <div class="flex-between">
+                <button id="exportJsonBtn">📥 Exportar a datos.json</button>
+                <button id="importJsonBtn" class="import-json-btn">📂 Importar JSON (reemplazar todo)</button>
+                <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
+                <button id="resetDemoDataBtn" style="background:#475569;">♻️ Cargar Demo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="userPanel">
+        <div class="card">
+            <div class="card-title">📊 Tabla de Posiciones</div>
+            <div class="responsive-table" id="standingsTable"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">⚡ Líderes: Goles | Tarjetas | MVP</div>
+            <div id="leadersStats" class="form-grid" style="grid-template-columns: repeat(auto-fit,minmax(200px,1fr));"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">📆 Partidos / Jornadas + Cuenta Regresiva</div>
+            <select id="jornadaFilterUser"></select>
+            <div id="userMatchesList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let appData = {
+        torneo: { nombre: "Liga Élite Fut7", numEquipos: 4, numJornadas: 6 },
+        equipos: [],
+        partidos: []
+    };
+
+    let adminAuthenticated = false;
+    let activeAdminTab = "config";
+
+    function generateId() { return Date.now() + '-' + Math.random().toString(36); }
+
+    async function loadExternalData() {
+        try {
+            const res = await fetch('datos.json?t=' + Date.now());
+            if(res.ok) {
+                const data = await res.json();
+                if(data && data.equipos && data.partidos) {
+                    appData = data;
+                    console.log("Datos cargados desde datos.json");
+                    renderAll();
+                    return;
+                }
+            }
+        } catch(e) { console.log("No se encontró datos.json, usando demo"); }
+        loadDemoData();
+    }
+
+    function loadDemoData() {
+        appData = {
+            torneo: { nombre: "Copa Centenario 7", numEquipos: 4, numJornadas: 3 },
+            equipos: [
+                { id: "eq1", nombre: "Magdalena F.C", jugadores: [{ id: "p1", nombre: "Leo M." }, { id: "p2", nombre: "Cris R." }] },
+                { id: "eq2", nombre: "San Diego F.C", jugadores: [{ id: "p3", nombre: "Andrés I." }, { id: "p4", nombre: "Fernando T." }] },
+                { id: "eq3", nombre: "Sitiecito F.C", jugadores: [{ id: "p5", nombre: "Kevin D.B." }, { id: "p6", nombre: "Erling H." }] },
+                { id: "eq4", nombre: "F.C Mata", jugadores: [{ id: "p7", nombre: "Luis S." }, { id: "p8", nombre: "Enzo F." }] }
+            ],
+            partidos: [
+                { id: "m1", jornada: 1, equipoLocalId: "eq1", equipoVisitanteId: "eq2", fechaHora: obtenerFechaLibre(2), estado: "finalizado", eventos: { goles: [{jugadorId:"p1", equipoLocal:true},{jugadorId:"p3", equipoLocal:false}], tarjetas: [{jugadorId:"p2", tipo:"amarilla"}], mvp: "p1" }, resultado: { golesLocal:2, golesVisitante:1 } },
+                { id: "m2", jornada: 1, equipoLocalId: "eq3", equipoVisitanteId: "eq4", fechaHora: obtenerFechaLibre(1), estado: "finalizado", eventos: { goles: [{jugadorId:"p5", equipoLocal:true},{jugadorId:"p7", equipoLocal:false}], tarjetas: [], mvp: "p5" }, resultado: { golesLocal:3, golesVisitante:1 } }
+            ]
+        };
+        recalcResultadosDesdeEventos();
+        renderAll();
+    }
+
+    function obtenerFechaLibre(diasSuma) {
+        let d = new Date();
+        d.setDate(d.getDate() + diasSuma);
+        d.setHours(19,0,0,0);
+        return d.toISOString().slice(0,16);
+    }
+
+    function recalcResultadosDesdeEventos() {
+        appData.partidos.forEach(p => {
+            if(p.eventos && p.eventos.goles) {
+                let localG = p.eventos.goles.filter(g => g.equipoLocal === true).length;
+                let visitG = p.eventos.goles.filter(g => g.equipoLocal === false).length;
+                p.resultado = { golesLocal: localG, golesVisitante: visitG };
+                if(p.eventos.goles.length || p.eventos.tarjetas.length) p.estado = "finalizado";
+                else if(p.estado !== "programado") p.estado = "programado";
+            } else if(!p.eventos) {
+                p.eventos = { goles: [], tarjetas: [], mvp: null };
+                if(!p.resultado) p.resultado = null;
+                p.estado = "programado";
+            }
+        });
+    }
+
+    function saveToLocal() { localStorage.setItem("fut7_adminData", JSON.stringify(appData)); }
+    
+    function computePlayerStats() {
+        let stats = new Map();
+        appData.partidos.forEach(p => {
+            if(p.eventos && p.estado === "finalizado") {
+                (p.eventos.goles || []).forEach(g => {
+                    let s = stats.get(g.jugadorId) || {goles:0, amarillas:0, rojas:0, mvp:0};
+                    s.goles += 1;
+                    stats.set(g.jugadorId, s);
+                });
+                (p.eventos.tarjetas || []).forEach(t => {
+                    let s = stats.get(t.jugadorId) || {goles:0, amarillas:0, rojas:0, mvp:0};
+                    if(t.tipo === "amarilla") s.amarillas += 1;
+                    if(t.tipo === "roja") s.rojas += 1;
+                    stats.set(t.jugadorId, s);
+                });
+                if(p.eventos.mvp) {
+                    let s = stats.get(p.eventos.mvp) || {goles:0, amarillas:0, rojas:0, mvp:0};
+                    s.mvp += 1;
+                    stats.set(p.eventos.mvp, s);
+                }
+            }
+        });
+        return stats;
+    }
+
+    function getStandings() {
+        let table = new Map();
+        appData.equipos.forEach(eq => { table.set(eq.id, { pts:0, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, dif:0, nombre: eq.nombre }); });
+        appData.partidos.forEach(p => {
+            if(p.estado === "finalizado" && p.resultado) {
+                let local = table.get(p.equipoLocalId);
+                let visit = table.get(p.equipoVisitanteId);
+                if(!local || !visit) return;
+                let gL = p.resultado.golesLocal, gV = p.resultado.golesVisitante;
+                local.gf += gL; local.gc += gV;
+                visit.gf += gV; visit.gc += gL;
+                local.pj++; visit.pj++;
+                if(gL > gV) { local.pg++; local.pts+=3; visit.pp++; }
+                else if(gV > gL) { visit.pg++; visit.pts+=3; local.pp++; }
+                else { local.pe++; visit.pe++; local.pts+=1; visit.pts+=1; }
+                local.dif = local.gf - local.gc; visit.dif = visit.gf - visit.gc;
+            }
+        });
+        return Array.from(table.values()).sort((a,b)=> b.pts - a.pts || b.dif - a.dif);
+    }
+
+    function renderUserMode() {
+        let standings = getStandings();
+        let htmlStand = `<table class="standings-table">
+            <thead>
+                <tr><th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr>
+            </thead>
+            <tbody>`;
+        standings.forEach((t,i) => { htmlStand += `<tr><td>${i+1}</td><td>${t.nombre}</td><td>${t.pj}</td><td>${t.pg}</td><td>${t.pe}</td><td>${t.pp}</td><td>${t.gf}</td><td>${t.gc}</td><td>${t.dif}</td><td>${t.pts}</td></tr>`; });
+        htmlStand += `</tbody></table>`;
+        document.getElementById("standingsTable").innerHTML = htmlStand;
+        
+        let statsMap = computePlayerStats();
+        let playersList = [];
+        appData.equipos.forEach(team => {
+            team.jugadores.forEach(j => { playersList.push({...j, equipoNombre: team.nombre, equipoId: team.id, stats: statsMap.get(j.id) || {goles:0, amarillas:0, rojas:0, mvp:0} }); });
+        });
+        let topGoles = [...playersList].sort((a,b)=> b.stats.goles - a.stats.goles).slice(0,3);
+        let topAmarillas = [...playersList].sort((a,b)=> b.stats.amarillas - a.stats.amarillas).slice(0,3);
+        let topRojas = [...playersList].sort((a,b)=> b.stats.rojas - a.stats.rojas).slice(0,3);
+        let topMVP = [...playersList].sort((a,b)=> b.stats.mvp - a.stats.mvp).slice(0,3);
+        document.getElementById("leadersStats").innerHTML = `
+            <div><strong>🔥 Máximos Goleadores</strong><br>${topGoles.map(p=>`${p.nombre} (${p.equipoNombre}): ${p.stats.goles}`).join('<br>')||'—'}</div>
+            <div><strong>🟨 Tarjetas Amarillas</strong><br>${topAmarillas.map(p=>`${p.nombre}: ${p.stats.amarillas}`).join('<br>')||'—'}</div>
+            <div><strong>🟥 Tarjetas Rojas</strong><br>${topRojas.map(p=>`${p.nombre}: ${p.stats.rojas}`).join('<br>')||'—'}</div>
+            <div><strong>⭐ MVP del Torneo</strong><br>${topMVP.map(p=>`${p.nombre} (${p.stats.mvp} MVPs)`).join('<br>')||'—'}</div>
+        `;
+        let jornadas = [...new Set(appData.partidos.map(p=>p.jornada))].sort((a,b)=>a-b);
+        let filterSelect = document.getElementById("jornadaFilterUser");
+        filterSelect.innerHTML = `<option value="all">Todas las jornadas</option>`+jornadas.map(j=>`<option value="${j}">Jornada ${j}</option>`).join('');
+        filterSelect.onchange = () => renderUserMatches(filterSelect.value);
+        renderUserMatches(filterSelect.value);
+    }
+
+    function renderUserMatches(jornadaFiltro) {
+        let filtered = jornadaFiltro === "all" ? appData.partidos : appData.partidos.filter(p=> p.jornada == jornadaFiltro);
+        let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+        filtered.forEach(m => {
+            let local = appData.equipos.find(e=>e.id===m.equipoLocalId)?.nombre||"?";
+            let visit = appData.equipos.find(e=>e.id===m.equipoVisitanteId)?.nombre||"?";
+            let resultadoStr = m.estado === "finalizado" ? `${m.resultado?.golesLocal} - ${m.resultado?.golesVisitante}` : "vs";
+            let countdown = getCountdownText(m.fechaHora);
+            html += `<div style="background:#f1f5f9; border-radius: 20px; padding:12px;"><div><strong>Jornada ${m.jornada}</strong> · ${local} ${resultadoStr} ${visit}</div>
+            <div style="font-size:0.8rem">📅 ${m.fechaHora?.replace('T',' ')} <span class="countdown">${countdown}</span></div>`;
+            if(m.estado === "finalizado" && m.eventos) {
+                let golesTxt = m.eventos.goles?.map(g=>{ let nom = buscarNombreJugador(g.jugadorId); return `${nom} (${g.equipoLocal?'L':'V'})`}).join(', ')||'ninguno';
+                let tarjetasTxt = m.eventos.tarjetas?.map(t=>`${buscarNombreJugador(t.jugadorId)} (${t.tipo==='amarilla'?'🟨':'🟥'})`).join(', ')||'ninguna';
+                let mvpNom = m.eventos.mvp ? buscarNombreJugador(m.eventos.mvp) : '-';
+                html += `<div style="font-size:0.75rem; margin-top:6px;">⚽ Goles: ${golesTxt} &nbsp; 🃏 Tarjetas: ${tarjetasTxt} &nbsp; 🏅 MVP: ${mvpNom}</div>`;
+            }
+            html += `</div>`;
+        });
+        html+=`</div>`;
+        document.getElementById("userMatchesList").innerHTML = html || "<p>Sin partidos</p>";
+    }
+
+    function getCountdownText(dateTimeStr) {
+        if(!dateTimeStr) return "Sin fecha";
+        let target = new Date(dateTimeStr);
+        if(isNaN(target)) return "Fecha inválida";
+        let now = new Date();
+        let diff = target - now;
+        if(diff <= 0) return "⏰ Partido disputado (o en curso)";
+        let hours = Math.floor(diff / (1000*60*60));
+        let mins = Math.floor((diff % (3600000))/60000);
+        return `⏳ falta ${hours}h ${mins}m`;
+    }
+
+    function buscarNombreJugador(id) { for(let eq of appData.equipos) { let j = eq.jugadores.find(j=>j.id===id); if(j) return j.nombre; } return "?"; }
+
+    // ADMIN funciones (edit, delete, import/export)
+    function editMatchFull(matchId) {
+        const match = appData.partidos.find(m => m.id === matchId);
+        if (!match) return;
+        const maxJornada = appData.torneo.numJornadas;
+        const equiposList = appData.equipos.map(e => `<option value="${e.id}" ${e.id===match.equipoLocalId ? 'selected' : ''}>${e.nombre}</option>`);
+        const equiposVisitList = appData.equipos.map(e => `<option value="${e.id}" ${e.id===match.equipoVisitanteId ? 'selected' : ''}>${e.nombre}</option>`);
+        const modalHtml = `
+            <div style="background:white; padding:20px; border-radius:28px; max-width:450px;">
+                <h3>✏️ Editar Partido</h3>
+                <div class="form-grid" style="grid-template-columns:1fr;">
+                    <label>Jornada (1-${maxJornada})</label>
+                    <input type="number" id="editJornada" min="1" max="${maxJornada}" value="${match.jornada}">
+                    <label>Equipo Local</label>
+                    <select id="editLocal">${equiposList}</select>
+                    <label>Equipo Visitante</label>
+                    <select id="editVisitante">${equiposVisitList}</select>
+                    <label>Fecha y Hora</label>
+                    <input type="datetime-local" id="editFecha" value="${match.fechaHora || ''}">
+                </div>
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button id="confirmEditMatch">Guardar Cambios</button>
+                    <button id="cancelEditMatch">Cancelar</button>
+                </div>
+            </div>
+        `;
+        const modalDiv = document.createElement("div");
+        modalDiv.style.position="fixed"; modalDiv.style.top="0"; modalDiv.style.left="0"; modalDiv.style.width="100%"; modalDiv.style.height="100%"; modalDiv.style.background="rgba(0,0,0,0.5)"; modalDiv.style.display="flex"; modalDiv.style.alignItems="center"; modalDiv.style.justifyContent="center"; modalDiv.style.zIndex="1000";
+        modalDiv.innerHTML = modalHtml;
+        document.body.appendChild(modalDiv);
+        modalDiv.querySelector("#confirmEditMatch").onclick = () => {
+            const newJornada = parseInt(modalDiv.querySelector("#editJornada").value);
+            const newLocal = modalDiv.querySelector("#editLocal").value;
+            const newVisit = modalDiv.querySelector("#editVisitante").value;
+            const newFecha = modalDiv.querySelector("#editFecha").value;
+            if (isNaN(newJornada) || newJornada<1 || newJornada>maxJornada) { alert("Jornada inválida"); return; }
+            if (newLocal === newVisit) { alert("Equipos deben ser distintos"); return; }
+            match.jornada = newJornada;
+            match.equipoLocalId = newLocal;
+            match.equipoVisitanteId = newVisit;
+            match.fechaHora = newFecha;
+            renderAll();
+            saveToLocal();
+            modalDiv.remove();
+        };
+        modalDiv.querySelector("#cancelEditMatch").onclick = () => modalDiv.remove();
+    }
+
+    function deleteMatch(matchId) {
+        if (confirm("¿Eliminar este partido permanentemente? Se perderán estadísticas asociadas.")) {
+            appData.partidos = appData.partidos.filter(m => m.id !== matchId);
+            renderAll();
+            saveToLocal();
+        }
+    }
+
+    function importFullJSON(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (imported && imported.torneo && imported.equipos && imported.partidos) {
+                    appData = imported;
+                    recalcResultadosDesdeEventos();
+                    renderAll();
+                    saveToLocal();
+                    alert("Datos importados correctamente.");
+                } else {
+                    alert("Archivo JSON inválido: debe contener torneo, equipos y partidos.");
+                }
+            } catch (err) { alert("Error al parsear JSON: " + err.message); }
+        };
+        reader.readAsText(file);
+    }
+
+    function renderAdminPanels() {
+        renderConfigForm();
+        renderTeamsManager();
+        renderMatchesAdmin();
+        renderJornadaSelects();
+    }
+
+    function renderConfigForm() {
+        document.getElementById("torneoNombre").value = appData.torneo.nombre;
+        document.getElementById("numEquipos").value = appData.torneo.numEquipos;
+        document.getElementById("numJornadas").value = appData.torneo.numJornadas;
+    }
+
+    function renderTeamsManager() {
+        let container = document.getElementById("teamsListContainer");
+        container.innerHTML = "";
+        appData.equipos.forEach((team) => {
+            let div = document.createElement("div");
+            div.className = "team-player-list";
+            div.innerHTML = `<div class="flex-between"><strong>🏟️ ${team.nombre}</strong><button class="delTeamBtn" data-id="${team.id}">❌ Eliminar Equipo</button></div>
+            <div style="margin-top: 8px;"><input type="text" id="playerName_${team.id}" placeholder="Nombre jugador"><button class="addPlayerBtn" data-team="${team.id}">+ Agregar Jugador</button></div>
+            <ul>${team.jugadores.map(j=>`<li>${j.nombre} <button class="delPlayerBtn" data-player="${j.id}" data-team="${team.id}">🗑️</button></li>`).join('')}</ul>`;
+            container.appendChild(div);
+        });
+        document.querySelectorAll(".delTeamBtn").forEach(btn => btn.addEventListener("click", e => { let id = btn.dataset.id; appData.equipos = appData.equipos.filter(e=>e.id!==id); appData.partidos = appData.partidos.filter(p=> p.equipoLocalId!==id && p.equipoVisitanteId!==id); renderAll(); saveToLocal(); }));
+        document.querySelectorAll(".addPlayerBtn").forEach(btn => btn.addEventListener("click", e => { let teamId = btn.dataset.team; let nameInput = document.getElementById(`playerName_${teamId}`); let name = nameInput.value.trim(); if(name){ let team = appData.equipos.find(t=>t.id===teamId); team.jugadores.push({id:generateId(), nombre:name}); nameInput.value=""; renderAll(); saveToLocal(); } }));
+        document.querySelectorAll(".delPlayerBtn").forEach(btn => btn.addEventListener("click", e => { let playerId = btn.dataset.player; let teamId = btn.dataset.team; let team = appData.equipos.find(t=>t.id===teamId); team.jugadores = team.jugadores.filter(j=>j.id!==playerId); renderAll(); saveToLocal(); }));
+    }
+
+    function renderMatchesAdmin() {
+        let filterVal = document.getElementById("filterJornadaPartidos")?.value || "all";
+        let jornadasSet = [...new Set(appData.partidos.map(p=>p.jornada))];
+        let filterSelect = document.getElementById("filterJornadaPartidos");
+        if(filterSelect) filterSelect.innerHTML = `<option value="all">Todas</option>`+jornadasSet.map(j=>`<option value="${j}">Jornada ${j}</option>`).join('');
+        let filtered = filterVal === "all" ? appData.partidos : appData.partidos.filter(p=>p.jornada == filterVal);
+        let container = document.getElementById("matchesListAdmin");
+        container.innerHTML = filtered.map(m => {
+            let local = appData.equipos.find(e=>e.id===m.equipoLocalId)?.nombre||"?";
+            let visit = appData.equipos.find(e=>e.id===m.equipoVisitanteId)?.nombre||"?";
+            return `<div style="border:1px solid #ddd; border-radius:20px; padding: 12px; margin-bottom:12px;">
+                        <div><b>Jornada ${m.jornada}</b> ${local} vs ${visit}  | 📅 ${m.fechaHora?.replace('T',' ')} <span class="countdown">${getCountdownText(m.fechaHora)}</span>
+                        <button class="edit-full-btn" data-id="${m.id}">✏️ Editar Partido</button>
+                        <button class="delete-match-btn" data-id="${m.id}">🗑️ Eliminar</button>
+                        <button class="edit-jornada-btn" data-id="${m.id}">📅 Editar Jornada</button>
+                        </div>
+                        <div>Estado: ${m.estado}  ${m.resultado ? `Resultado: ${m.resultado.golesLocal} - ${m.resultado.golesVisitante}` : ''}</div>
+                        <button class="editMatchBtn" data-id="${m.id}">✏️ Editar Estadísticas (Goles/Tarjetas/MVP)</button>
+                    </div>`;
+        }).join('');
+        document.querySelectorAll(".edit-full-btn").forEach(btn => btn.addEventListener("click", (e) => editMatchFull(btn.dataset.id)));
+        document.querySelectorAll(".delete-match-btn").forEach(btn => btn.addEventListener("click", (e) => deleteMatch(btn.dataset.id)));
+        document.querySelectorAll(".edit-jornada-btn").forEach(btn => btn.addEventListener("click", (e) => editMatchJornada(btn.dataset.id)));
+        document.querySelectorAll(".editMatchBtn").forEach(btn => btn.addEventListener("click", (e) => openMatchStatsEditor(btn.dataset.id)));
+        if(filterSelect) filterSelect.onchange = () => renderMatchesAdmin();
+    }
+
+    function editMatchJornada(matchId) {
+        const match = appData.partidos.find(m => m.id === matchId);
+        if (!match) return;
+        const maxJornada = appData.torneo.numJornadas;
+        let newJornada = prompt(`Editar jornada del partido (actual: ${match.jornada}). Ingrese número (1-${maxJornada}):`, match.jornada);
+        if (newJornada !== null) {
+            let num = parseInt(newJornada);
+            if (isNaN(num) || num < 1 || num > maxJornada) { alert(`Jornada inválida. Debe estar entre 1 y ${maxJornada}.`); return; }
+            match.jornada = num;
+            renderAll();
+            saveToLocal();
+        }
+    }
+
+    function openMatchStatsEditor(matchId) {
+        let match = appData.partidos.find(m=>m.id===matchId);
+        if(!match) return;
+        let localTeam = appData.equipos.find(e=>e.id===match.equipoLocalId);
+        let awayTeam = appData.equipos.find(e=>e.id===match.equipoVisitanteId);
+        let jugadoresOptions = [...(localTeam?.jugadores || []).map(j=>({...j, teamSide:"local"})), ...(awayTeam?.jugadores || []).map(j=>({...j, teamSide:"visit"}))];
+        let eventos = match.eventos || { goles:[], tarjetas:[], mvp:null };
+        let formHtml = `<div style="background:white; padding:12px;"><h4>Editar estadísticas: ${localTeam?.nombre || '?'} vs ${awayTeam?.nombre || '?'}</h4>
+        <div><label>Agregar Gol: <select id="goalPlayer"><option>Jugador</option>${jugadoresOptions.map(j=>`<option value="${j.id}" data-side="${j.teamSide}">${j.nombre} (${j.teamSide==='local'?'Local':'Visitante'})</option>`).join('')}</select><button id="addGoalBtn">+ Gol</button></div>
+        <div><label>Tarjeta: <select id="cardPlayer">${jugadoresOptions.map(j=>`<option value="${j.id}">${j.nombre}</option>`).join('')}</select>
+        <select id="cardType"><option value="amarilla">Amarilla</option><option value="roja">Roja</option></select><button id="addCardBtn">Añadir</button></div>
+        <div><label>MVP: <select id="mvpSelect"><option value="">Ninguno</option>${jugadoresOptions.map(j=>`<option value="${j.id}">${j.nombre}</option>`).join('')}</select><button id="setMvpBtn">Establecer MVP</button></div>
+        <hr><div><strong>Eventos actuales:</strong><br>Goles: ${eventos.goles.map(g=>buscarNombreJugador(g.jugadorId)+' ('+(g.equipoLocal?'L':'V')+')').join(', ')}<br>Tarjetas: ${eventos.tarjetas.map(t=>buscarNombreJugador(t.jugadorId)+' '+t.tipo).join(', ')}<br>MVP: ${eventos.mvp?buscarNombreJugador(eventos.mvp):'—'}</div>
+        <button id="saveMatchEvents">Guardar Cambios</button><button id="closeEditor">Cerrar</button></div>`;
+        let modalDiv = document.createElement("div");
+        modalDiv.style.position="fixed"; modalDiv.style.top="0";modalDiv.style.left="0";modalDiv.style.width="100%";modalDiv.style.height="100%";modalDiv.style.background="rgba(0,0,0,0.5)";modalDiv.style.display="flex";modalDiv.style.alignItems="center";modalDiv.style.justifyContent="center";modalDiv.style.zIndex="1000";
+        modalDiv.innerHTML = `<div style="background:white; max-width:500px; border-radius:28px; padding:20px;">${formHtml}</div>`;
+        document.body.appendChild(modalDiv);
+        modalDiv.querySelector("#addGoalBtn").onclick = () => {
+            let sel = modalDiv.querySelector("#goalPlayer");
+            let playerId = sel.value; let sideOpt = sel.options[sel.selectedIndex]?.getAttribute("data-side");
+            if(playerId && sideOpt) { eventos.goles.push({jugadorId:playerId, equipoLocal: sideOpt==='local'}); renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); }
+        };
+        modalDiv.querySelector("#addCardBtn").onclick = () => {
+            let playerId = modalDiv.querySelector("#cardPlayer").value, tipo = modalDiv.querySelector("#cardType").value;
+            if(playerId) { eventos.tarjetas.push({jugadorId:playerId, tipo}); renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); }
+        };
+        modalDiv.querySelector("#setMvpBtn").onclick = () => { let mvp = modalDiv.querySelector("#mvpSelect").value; eventos.mvp = mvp || null; renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); };
+        modalDiv.querySelector("#saveMatchEvents").onclick = () => { match.eventos = eventos; match.estado = "finalizado"; recalcResultadosDesdeEventos(); renderAll(); modalDiv.remove(); saveToLocal(); };
+        modalDiv.querySelector("#closeEditor").onclick = () => modalDiv.remove();
+        function renderMatchEventsPreview(modal, ev, opts) { let previewDiv = modal.querySelector("div>div:last-child"); if(previewDiv) previewDiv.innerHTML = `<strong>Eventos actuales:</strong><br>Goles: ${ev.goles.map(g=>buscarNombreJugador(g.jugadorId)+' ('+(g.equipoLocal?'L':'V')+')').join(', ')}<br>Tarjetas: ${ev.tarjetas.map(t=>buscarNombreJugador(t.jugadorId)+' '+t.tipo).join(', ')}<br>MVP: ${ev.mvp?buscarNombreJugador(ev.mvp):'—'}`; }
+    }    
+
+    function renderJornadaSelects() {
+        let jornadaLen = appData.torneo.numJornadas || 1;
+        let opts = `<option value="">Seleccionar</option>`;
+        for(let i=1;i<=jornadaLen;i++) opts+=`<option value="${i}">Jornada ${i}</option>`;
+        document.getElementById("matchJornadaSelect").innerHTML = opts;
+        document.getElementById("filterJornadaPartidos").innerHTML = `<option value="all">Todas</option>`+[...Array(jornadaLen).keys()].map(i=>`<option value="${i+1}">Jornada ${i+1}</option>`).join('');
+        let localSelect = document.getElementById("matchLocalTeam");
+        let awaySelect = document.getElementById("matchAwayTeam");
+        localSelect.innerHTML = appData.equipos.map(e=>`<option value="${e.id}">${e.nombre}</option>`);
+        awaySelect.innerHTML = appData.equipos.map(e=>`<option value="${e.id}">${e.nombre}</option>`);
+    }
+
+    function createMatch() {
+        let jornada = parseInt(document.getElementById("matchJornadaSelect").value);
+        let localId = document.getElementById("matchLocalTeam").value;
+        let awayId = document.getElementById("matchAwayTeam").value;
+        let fecha = document.getElementById("matchDateTime").value;
+        if(!jornada || !localId || !awayId || localId===awayId) { alert("Complete datos válidos (jornada, equipos distintos)"); return; }
+        let newMatch = { id:generateId(), jornada, equipoLocalId:localId, equipoVisitanteId:awayId, fechaHora:fecha, estado:"programado", eventos:{goles:[], tarjetas:[], mvp:null}, resultado:null };
+        appData.partidos.push(newMatch);
+        renderAll(); saveToLocal();
+    }
+
+    function exportJson() {
+        let dataStr = JSON.stringify(appData, null, 2);
+        let blob = new Blob([dataStr], {type:"application/json"});
+        let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "datos.json"; a.click();
+    }
+
+    function resetToDemo() { loadDemoData(); saveToLocal(); renderAll(); }
+
+    function renderAll() {
+        document.getElementById("tournamentNameDisplay").innerHTML = `⚽ ${appData.torneo.nombre}`;
+        if(adminAuthenticated) { document.getElementById("adminPanel").style.display = "block"; document.getElementById("userPanel").style.display = "none"; renderAdminPanels(); } 
+        else { document.getElementById("adminPanel").style.display = "none"; document.getElementById("userPanel").style.display = "block"; renderUserMode(); }
+        saveToLocal();
+    }
+
+    function toggleAdminMode() {
+        if(!adminAuthenticated) {
+            let pwd = prompt("🔐 Contraseña de administrador:");
+            if(pwd === "admin123") { adminAuthenticated = true; document.getElementById("modeLabel").innerHTML = "👑 MODO ADMIN"; document.getElementById("toggleModeBtn").innerText = "👤 Ver como Usuario"; renderAll(); }
+            else alert("Contraseña incorrecta");
+        } else { adminAuthenticated = false; document.getElementById("modeLabel").innerHTML = "👤 MODO USUARIO"; document.getElementById("toggleModeBtn").innerText = "🔐 Acceso Admin"; renderAll(); }
+    }
+
+    window.onload = async () => {
+        await loadExternalData();
+        document.getElementById("toggleModeBtn").addEventListener("click", toggleAdminMode);
+        document.getElementById("saveConfigBtn").addEventListener("click", () => { appData.torneo.nombre = document.getElementById("torneoNombre").value; appData.torneo.numEquipos = parseInt(document.getElementById("numEquipos").value); appData.torneo.numJornadas = parseInt(document.getElementById("numJornadas").value); renderAll(); saveToLocal(); });
+        document.getElementById("addTeamBtn").addEventListener("click", () => { let name = prompt("Nombre nuevo equipo"); if(name) appData.equipos.push({id:generateId(), nombre:name, jugadores:[]}); renderAll(); saveToLocal(); });
+        document.getElementById("createMatchBtn").addEventListener("click", createMatch);
+        document.getElementById("exportJsonBtn").addEventListener("click", exportJson);
+        document.getElementById("resetDemoDataBtn").addEventListener("click", resetToDemo);
+        document.getElementById("importJsonBtn").addEventListener("click", () => document.getElementById("jsonFileInput").click());
+        document.getElementById("jsonFileInput").addEventListener("change", (e) => { if(e.target.files.length) importFullJSON(e.target.files[0]); e.target.value = ''; });
+        document.getElementById("importTeamsCsvBtn").addEventListener("click", () => alert("Importar CSV de equipos: formato esperado 'Equipo,Jugador' por fila. Se agregarán jugadores a equipos existentes o nuevos."));
+        document.getElementById("exportTeamsCsvBtn").addEventListener("click", () => { let csvRows = []; appData.equipos.forEach(e=> e.jugadores.forEach(j=> csvRows.push(`${e.nombre},${j.nombre}`))); let blob = new Blob([csvRows.join("\n")], {type:"text/csv"}); let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="equipos_jugadores.csv"; a.click(); });
+        document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", (e) => { activeAdminTab = btn.dataset.tab; document.querySelectorAll(".tab-content").forEach(tab=>tab.style.display="none"); document.getElementById(`tab${activeAdminTab.charAt(0).toUpperCase()+activeAdminTab.slice(1)}`).style.display="block"; document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active-tab")); btn.classList.add("active-tab"); }));
+        renderAll();
+    };
+</script>
+</body>
+</html>
