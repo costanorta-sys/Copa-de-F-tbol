@@ -1,8 +1,8 @@
 {
   "torneo": {
     "nombre": "Copa Futbol 7",
-    "numEquipos": 6,
-    "numJornadas": 5
+    "numEquipos": 7,
+    "numJornadas": 6
   },
   "equipos": [
     {
@@ -33,6 +33,11 @@
     {
       "id": "1777806757664-0.f451rylph35",
       "nombre": "Avenida FC",
+      "jugadores": []
+    },
+    {
+      "id": "1777814351221-0.gdpthku55k7",
+      "nombre": "Jicotea FC",
       "jugadores": []
     }
   ],
