@@ -123,7 +123,6 @@
         button:hover {
             background: #0f172a;
         }
-        /* CORRECCIÓN DE TABLA: quitamos display:block y añadimos scroll horizontal */
         .responsive-table {
             overflow-x: auto;
             margin-top: 12px;
@@ -131,7 +130,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px; /* para forzar scroll en móvil si es necesario */
+            min-width: 600px;
         }
         th, td {
             text-align: left;
@@ -143,13 +142,6 @@
             background-color: #f8fafc;
             font-weight: 700;
             color: #1e293b;
-        }
-        .stats-badge {
-            background: #fef9c3;
-            border-radius: 24px;
-            padding: 2px 10px;
-            font-size: 0.75rem;
-            font-weight: bold;
         }
         .countdown {
             font-family: monospace;
@@ -189,6 +181,20 @@
         .delete-match-btn:hover { background: #dc2626; }
         .import-json-btn { background: #10b981; margin-left: 12px; }
         .import-json-btn:hover { background: #059669; }
+        .event-badge {
+            display: inline-block;
+            background: #e2e8f0;
+            border-radius: 16px;
+            padding: 2px 8px;
+            margin: 2px;
+            font-size: 0.75rem;
+        }
+        .remove-event {
+            margin-left: 6px;
+            cursor: pointer;
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -456,7 +462,167 @@
 
     function buscarNombreJugador(id) { for(let eq of appData.equipos) { let j = eq.jugadores.find(j=>j.id===id); if(j) return j.nombre; } return "?"; }
 
-    // ADMIN funciones (edit, delete, import/export)
+    // ---------- ADMIN: Editor de estadísticas mejorado ----------
+    function openMatchStatsEditor(matchId) {
+        const match = appData.partidos.find(m => m.id === matchId);
+        if (!match) return;
+        const localTeam = appData.equipos.find(e => e.id === match.equipoLocalId);
+        const awayTeam = appData.equipos.find(e => e.id === match.equipoVisitanteId);
+        if (!localTeam || !awayTeam) return;
+
+        // Copia local de eventos para trabajar sin afectar hasta guardar
+        let eventos = JSON.parse(JSON.stringify(match.eventos || { goles: [], tarjetas: [], mvp: null }));
+
+        // Generar opciones de jugadores
+        const jugadoresLocal = localTeam.jugadores.map(j => ({ ...j, teamSide: 'local', teamName: localTeam.nombre }));
+        const jugadoresVisit = awayTeam.jugadores.map(j => ({ ...j, teamSide: 'visit', teamName: awayTeam.nombre }));
+        const allPlayers = [...jugadoresLocal, ...jugadoresVisit];
+
+        // Función para renderizar la vista previa de eventos dentro del modal
+        function renderPreview(container) {
+            const golesHtml = eventos.goles.map((g, idx) => {
+                const jugador = allPlayers.find(p => p.id === g.jugadorId);
+                const nombre = jugador ? `${jugador.nombre} (${g.equipoLocal ? 'L' : 'V'})` : '?';
+                return `<span class="event-badge">⚽ ${nombre} <span class="remove-event" data-type="goal" data-idx="${idx}">✖</span></span>`;
+            }).join('');
+            const tarjetasHtml = eventos.tarjetas.map((t, idx) => {
+                const jugador = allPlayers.find(p => p.id === t.jugadorId);
+                const nombre = jugador ? jugador.nombre : '?';
+                const icono = t.tipo === 'amarilla' ? '🟨' : '🟥';
+                return `<span class="event-badge">${icono} ${nombre} (${t.tipo}) <span class="remove-event" data-type="card" data-idx="${idx}">✖</span></span>`;
+            }).join('');
+            const mvpText = eventos.mvp ? (allPlayers.find(p => p.id === eventos.mvp)?.nombre || '?') : '—';
+            container.innerHTML = `
+                <div><strong>Goles:</strong> ${golesHtml || 'Ninguno'}</div>
+                <div><strong>Tarjetas:</strong> ${tarjetasHtml || 'Ninguna'}</div>
+                <div><strong>MVP:</strong> ${mvpText}</div>
+            `;
+            // Asignar eventos para eliminar eventos
+            container.querySelectorAll('.remove-event').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const type = el.dataset.type;
+                    const idx = parseInt(el.dataset.idx);
+                    if (type === 'goal') eventos.goles.splice(idx, 1);
+                    if (type === 'card') eventos.tarjetas.splice(idx, 1);
+                    renderPreview(container);
+                });
+            });
+        }
+
+        // Crear modal
+        const modalDiv = document.createElement('div');
+        modalDiv.style.position = 'fixed';
+        modalDiv.style.top = '0';
+        modalDiv.style.left = '0';
+        modalDiv.style.width = '100%';
+        modalDiv.style.height = '100%';
+        modalDiv.style.background = 'rgba(0,0,0,0.6)';
+        modalDiv.style.display = 'flex';
+        modalDiv.style.alignItems = 'center';
+        modalDiv.style.justifyContent = 'center';
+        modalDiv.style.zIndex = '1000';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.background = 'white';
+        modalContent.style.maxWidth = '550px';
+        modalContent.style.width = '90%';
+        modalContent.style.borderRadius = '28px';
+        modalContent.style.padding = '20px';
+        modalContent.style.maxHeight = '90vh';
+        modalContent.style.overflowY = 'auto';
+
+        modalContent.innerHTML = `
+            <h3 style="margin-top:0">✏️ Editar estadísticas</h3>
+            <p><strong>${localTeam.nombre}</strong> vs <strong>${awayTeam.nombre}</strong></p>
+            <div class="form-grid" style="grid-template-columns:1fr; gap:12px;">
+                <div>
+                    <label>➕ Agregar Gol:</label>
+                    <select id="goalPlayerSelect" style="width:100%">
+                        <option value="">-- Seleccionar jugador --</option>
+                        ${allPlayers.map(p => `<option value="${p.id}" data-side="${p.teamSide}">${p.nombre} (${p.teamSide === 'local' ? 'Local' : 'Visitante'})</option>`).join('')}
+                    </select>
+                    <button id="addGoalBtn" style="margin-top:8px; width:100%">+ Añadir Gol</button>
+                </div>
+                <div>
+                    <label>🃏 Agregar Tarjeta:</label>
+                    <select id="cardPlayerSelect" style="width:100%">
+                        <option value="">-- Seleccionar jugador --</option>
+                        ${allPlayers.map(p => `<option value="${p.id}">${p.nombre} (${p.teamSide === 'local' ? 'Local' : 'Visitante'})</option>`).join('')}
+                    </select>
+                    <select id="cardTypeSelect" style="width:100%; margin-top:5px;">
+                        <option value="amarilla">🟨 Amarilla</option>
+                        <option value="roja">🟥 Roja</option>
+                    </select>
+                    <button id="addCardBtn" style="margin-top:8px; width:100%">+ Añadir Tarjeta</button>
+                </div>
+                <div>
+                    <label>⭐ MVP del partido:</label>
+                    <select id="mvpSelect" style="width:100%">
+                        <option value="">-- Ninguno --</option>
+                        ${allPlayers.map(p => `<option value="${p.id}">${p.nombre} (${p.teamSide === 'local' ? 'Local' : 'Visitante'})</option>`).join('')}
+                    </select>
+                    <button id="setMvpBtn" style="margin-top:8px; width:100%">Establecer MVP</button>
+                </div>
+            </div>
+            <hr>
+            <div id="eventPreviewContainer" style="background:#f8fafc; padding:12px; border-radius:16px; margin:12px 0;"></div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:16px;">
+                <button id="saveMatchEventsBtn" style="background:#10b981">💾 Guardar Cambios</button>
+                <button id="closeModalBtn" style="background:#64748b">Cancelar</button>
+            </div>
+        `;
+
+        modalDiv.appendChild(modalContent);
+        document.body.appendChild(modalDiv);
+
+        const previewContainer = modalContent.querySelector('#eventPreviewContainer');
+        const refreshPreview = () => renderPreview(previewContainer);
+
+        // Botones de agregar
+        modalContent.querySelector('#addGoalBtn').onclick = () => {
+            const select = modalContent.querySelector('#goalPlayerSelect');
+            const playerId = select.value;
+            if (!playerId) { alert('Seleccione un jugador'); return; }
+            const player = allPlayers.find(p => p.id === playerId);
+            if (!player) return;
+            eventos.goles.push({ jugadorId: playerId, equipoLocal: player.teamSide === 'local' });
+            refreshPreview();
+            select.value = '';
+        };
+
+        modalContent.querySelector('#addCardBtn').onclick = () => {
+            const playerSelect = modalContent.querySelector('#cardPlayerSelect');
+            const playerId = playerSelect.value;
+            if (!playerId) { alert('Seleccione un jugador'); return; }
+            const cardType = modalContent.querySelector('#cardTypeSelect').value;
+            eventos.tarjetas.push({ jugadorId: playerId, tipo: cardType });
+            refreshPreview();
+            playerSelect.value = '';
+        };
+
+        modalContent.querySelector('#setMvpBtn').onclick = () => {
+            const mvpId = modalContent.querySelector('#mvpSelect').value;
+            eventos.mvp = mvpId || null;
+            refreshPreview();
+        };
+
+        // Guardar cambios
+        modalContent.querySelector('#saveMatchEventsBtn').onclick = () => {
+            match.eventos = eventos;
+            match.estado = 'finalizado';
+            recalcResultadosDesdeEventos();
+            renderAll();
+            saveToLocal();
+            modalDiv.remove();
+        };
+
+        modalContent.querySelector('#closeModalBtn').onclick = () => modalDiv.remove();
+
+        // Inicializar preview
+        refreshPreview();
+    }
+
+    // Otras funciones admin (editMatchFull, deleteMatch, etc.)
     function editMatchFull(matchId) {
         const match = appData.partidos.find(m => m.id === matchId);
         if (!match) return;
@@ -600,39 +766,6 @@
             saveToLocal();
         }
     }
-
-    function openMatchStatsEditor(matchId) {
-        let match = appData.partidos.find(m=>m.id===matchId);
-        if(!match) return;
-        let localTeam = appData.equipos.find(e=>e.id===match.equipoLocalId);
-        let awayTeam = appData.equipos.find(e=>e.id===match.equipoVisitanteId);
-        let jugadoresOptions = [...(localTeam?.jugadores || []).map(j=>({...j, teamSide:"local"})), ...(awayTeam?.jugadores || []).map(j=>({...j, teamSide:"visit"}))];
-        let eventos = match.eventos || { goles:[], tarjetas:[], mvp:null };
-        let formHtml = `<div style="background:white; padding:12px;"><h4>Editar estadísticas: ${localTeam?.nombre || '?'} vs ${awayTeam?.nombre || '?'}</h4>
-        <div><label>Agregar Gol: <select id="goalPlayer"><option>Jugador</option>${jugadoresOptions.map(j=>`<option value="${j.id}" data-side="${j.teamSide}">${j.nombre} (${j.teamSide==='local'?'Local':'Visitante'})</option>`).join('')}</select><button id="addGoalBtn">+ Gol</button></div>
-        <div><label>Tarjeta: <select id="cardPlayer">${jugadoresOptions.map(j=>`<option value="${j.id}">${j.nombre}</option>`).join('')}</select>
-        <select id="cardType"><option value="amarilla">Amarilla</option><option value="roja">Roja</option></select><button id="addCardBtn">Añadir</button></div>
-        <div><label>MVP: <select id="mvpSelect"><option value="">Ninguno</option>${jugadoresOptions.map(j=>`<option value="${j.id}">${j.nombre}</option>`).join('')}</select><button id="setMvpBtn">Establecer MVP</button></div>
-        <hr><div><strong>Eventos actuales:</strong><br>Goles: ${eventos.goles.map(g=>buscarNombreJugador(g.jugadorId)+' ('+(g.equipoLocal?'L':'V')+')').join(', ')}<br>Tarjetas: ${eventos.tarjetas.map(t=>buscarNombreJugador(t.jugadorId)+' '+t.tipo).join(', ')}<br>MVP: ${eventos.mvp?buscarNombreJugador(eventos.mvp):'—'}</div>
-        <button id="saveMatchEvents">Guardar Cambios</button><button id="closeEditor">Cerrar</button></div>`;
-        let modalDiv = document.createElement("div");
-        modalDiv.style.position="fixed"; modalDiv.style.top="0";modalDiv.style.left="0";modalDiv.style.width="100%";modalDiv.style.height="100%";modalDiv.style.background="rgba(0,0,0,0.5)";modalDiv.style.display="flex";modalDiv.style.alignItems="center";modalDiv.style.justifyContent="center";modalDiv.style.zIndex="1000";
-        modalDiv.innerHTML = `<div style="background:white; max-width:500px; border-radius:28px; padding:20px;">${formHtml}</div>`;
-        document.body.appendChild(modalDiv);
-        modalDiv.querySelector("#addGoalBtn").onclick = () => {
-            let sel = modalDiv.querySelector("#goalPlayer");
-            let playerId = sel.value; let sideOpt = sel.options[sel.selectedIndex]?.getAttribute("data-side");
-            if(playerId && sideOpt) { eventos.goles.push({jugadorId:playerId, equipoLocal: sideOpt==='local'}); renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); }
-        };
-        modalDiv.querySelector("#addCardBtn").onclick = () => {
-            let playerId = modalDiv.querySelector("#cardPlayer").value, tipo = modalDiv.querySelector("#cardType").value;
-            if(playerId) { eventos.tarjetas.push({jugadorId:playerId, tipo}); renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); }
-        };
-        modalDiv.querySelector("#setMvpBtn").onclick = () => { let mvp = modalDiv.querySelector("#mvpSelect").value; eventos.mvp = mvp || null; renderMatchEventsPreview(modalDiv, eventos, jugadoresOptions); };
-        modalDiv.querySelector("#saveMatchEvents").onclick = () => { match.eventos = eventos; match.estado = "finalizado"; recalcResultadosDesdeEventos(); renderAll(); modalDiv.remove(); saveToLocal(); };
-        modalDiv.querySelector("#closeEditor").onclick = () => modalDiv.remove();
-        function renderMatchEventsPreview(modal, ev, opts) { let previewDiv = modal.querySelector("div>div:last-child"); if(previewDiv) previewDiv.innerHTML = `<strong>Eventos actuales:</strong><br>Goles: ${ev.goles.map(g=>buscarNombreJugador(g.jugadorId)+' ('+(g.equipoLocal?'L':'V')+')').join(', ')}<br>Tarjetas: ${ev.tarjetas.map(t=>buscarNombreJugador(t.jugadorId)+' '+t.tipo).join(', ')}<br>MVP: ${ev.mvp?buscarNombreJugador(ev.mvp):'—'}`; }
-    }    
 
     function renderJornadaSelects() {
         let jornadaLen = appData.torneo.numJornadas || 1;
