@@ -156,6 +156,48 @@
         "golesLocal": 0,
         "golesVisitante": 0
       }
+    },
+    {
+      "id": "1777819316911-0.wq44yp7cka",
+      "jornada": 2,
+      "equipoLocalId": "eq4",
+      "equipoVisitanteId": "1777806720668-0.nfsbamm6fps",
+      "fechaHora": "2026-05-09T08:00",
+      "estado": "programado",
+      "eventos": {
+        "goles": [],
+        "tarjetas": [],
+        "mvp": null
+      },
+      "resultado": null
+    },
+    {
+      "id": "1777819369359-0.8e0wo6hup5j",
+      "jornada": 2,
+      "equipoLocalId": "1777806757664-0.f451rylph35",
+      "equipoVisitanteId": "eq1",
+      "fechaHora": "2026-05-09T09:00",
+      "estado": "programado",
+      "eventos": {
+        "goles": [],
+        "tarjetas": [],
+        "mvp": null
+      },
+      "resultado": null
+    },
+    {
+      "id": "1777819438326-0.ng1uv6gqvg",
+      "jornada": 2,
+      "equipoLocalId": "1777814351221-0.gdpthku55k7",
+      "equipoVisitanteId": "eq3",
+      "fechaHora": "2026-05-09T10:00",
+      "estado": "programado",
+      "eventos": {
+        "goles": [],
+        "tarjetas": [],
+        "mvp": null
+      },
+      "resultado": null
     }
   ]
 }
